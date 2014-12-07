@@ -1,7 +1,6 @@
 package nu.info.zeeshan.gtts;
 
 import java.awt.AWTException;
-import java.awt.BorderLayout;
 import java.awt.Rectangle;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
@@ -20,11 +19,12 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 public class Server {
 	public static BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -33,7 +33,7 @@ public class Server {
 	InputStream in;
 	BufferedReader input;
 	JFrame frame;
-	JTextField textfeild;
+	JTextArea textarea;
 	JLabel label;
 	ServerSocket ss = null;
 	Socket cs = null;
@@ -45,17 +45,20 @@ public class Server {
 	public void setGui() {
 		try {
 			frame = new JFrame();
-			JPanel panel = new JPanel();
-			textfeild = new JTextField();
+			JScrollPane panel = new JScrollPane();
+			frame.setUndecorated(true);
+			frame.getRootPane().setBorder(BorderFactory.createMatteBorder(10, 4, 4, 4, new ImageIcon()));
+			frame.setResizable(true);
+			textarea = new JTextArea();
 			label = new JLabel();
 			updateState("Client not Connected..");
-			frame.setUndecorated(true);
+			
 			frame.setType(JFrame.Type.UTILITY);
-			panel.setLayout(new BorderLayout());
-			panel.add(label, BorderLayout.NORTH);
-			panel.add(textfeild, BorderLayout.SOUTH);
+			// panel.setLayout(new BorderLayout());
+			panel.setColumnHeaderView(label);
+			panel.setViewportView(textarea);
 			frame.getContentPane().add(panel);
-			frame.setBounds(new Rectangle(150, 40));
+			frame.setBounds(new Rectangle(150, 150));
 			KeyListener klistner = new KeyListener() {
 
 				@Override
@@ -68,16 +71,23 @@ public class Server {
 
 				@Override
 				public void keyPressed(KeyEvent e) {
-					if (e.getKeyCode() == KeyEvent.VK_ENTER
-							&& textfeild.isEditable()) {
-						sendData(textfeild.getText());
-						textfeild.setText("");
-
+					if (e.getKeyCode() == KeyEvent.VK_ENTER ) {
+						if(e.isShiftDown())
+							textarea.append("\n");
+						else if(textarea.isEditable()
+								&& textarea.getText().toString().trim()
+										.length() > 0) {
+							sendData(textarea.getText());
+							textarea.setText("");
+							e.consume();
+						}
+						
 					}
+
 				}
 			};
-			textfeild.addKeyListener(klistner);
-			textfeild.setEditable(false);
+			textarea.addKeyListener(klistner);
+			textarea.setEditable(false);
 			frame.addMouseListener(new MouseListener() {
 
 				@Override
@@ -121,8 +131,7 @@ public class Server {
 
 				@Override
 				public void mouseDragged(MouseEvent e) {
-					frame.setLocation(e.getXOnScreen() - x, e.getYOnScreen()
-							- y);
+					frame.setLocation(e.getXOnScreen() - x, e.getYOnScreen() - y);
 
 				}
 			});
@@ -144,8 +153,14 @@ public class Server {
 					public void mouseClicked(MouseEvent e) {
 						switch (e.getButton()) {
 						case MouseEvent.BUTTON1:
-							frame.toFront();
-							frame.repaint();
+							if(e.getClickCount()==2){
+								frame.setVisible(!frame.isVisible());
+							}
+							else{
+								frame.toFront();
+								frame.repaint();
+							}
+							
 							break;
 						case MouseEvent.BUTTON3:
 							frame.dispose();
@@ -191,7 +206,7 @@ public class Server {
 	}
 
 	public void disconnected() {
-		textfeild.setEditable(false);
+		textarea.setEditable(false);
 		updateState("Client not Connected..");
 		lookForClient();
 	}
@@ -228,7 +243,7 @@ public class Server {
 				CLIENT_STATE = 0;
 				cs = ss.accept();
 				updateState("Enter Text");
-				textfeild.setEditable(true);
+				textarea.setEditable(true);
 				output = new PrintWriter(cs.getOutputStream(), true);
 				in = cs.getInputStream();
 				input = new BufferedReader(new InputStreamReader(in));
@@ -236,7 +251,7 @@ public class Server {
 				String msg;
 				CLIENT_STATE = 1;
 				while ((msg = input.readLine()) != null) {
-					textfeild.setText(msg);
+					textarea.append(msg + "\n");
 					System.out.println("got input");
 				}
 				CLIENT_STATE = 2;
