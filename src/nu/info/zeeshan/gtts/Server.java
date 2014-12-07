@@ -15,8 +15,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -26,15 +28,15 @@ import javax.swing.JTextField;
 
 public class Server {
 	public static BufferedReader br =new BufferedReader(new InputStreamReader(System.in));
-	static PrintWriter output;
-	static JFrame frame;
-	static JTextField textfeild;
-	static JLabel label;
-	static ServerSocket ss=null;
-	static Socket cs=null;
-	static int x;
-	static int y;
-	static public void setGui(){
+	 PrintWriter output;
+	 JFrame frame;
+	 JTextField textfeild;
+	 JLabel label;
+	 ServerSocket ss=null;
+	 Socket cs=null;
+	 int x;
+	 int y;
+	 public void setGui(){
 		try {
 			frame=new JFrame();
 			JPanel panel=new JPanel();
@@ -120,21 +122,29 @@ public class Server {
 			if(SystemTray.isSupported()){
 				System.out.println("Supported");
 				final SystemTray tray=SystemTray.getSystemTray();
-				String path="D:\\gttserver\\icon.png";
-				final TrayIcon ticon=new TrayIcon(new ImageIcon(path).getImage(),"Get The Text Server");
+				//new ImageIcon("../res/img/icon.png").getImage();
+				final TrayIcon ticon=new TrayIcon(new ImageIcon("D:/gttserver/icon.png").getImage(),"Server running at "+InetAddress.getLocalHost().getHostAddress()+":2345");
 				ticon.setImageAutoSize(true);
 				MouseAdapter madapter=new MouseAdapter() {
 					@Override
 					public void mouseClicked(MouseEvent e) {
-						frame.dispose();
-						tray.remove(ticon);
-						try {
-							if(cs!=null)
-								cs.close();
-							if(ss!=null)
-								ss.close();
-						} catch (IOException e1) {
-							e1.printStackTrace();
+						switch(e.getButton()){
+							case MouseEvent.BUTTON1:
+								frame.toFront();
+								frame.repaint();
+								break;
+							case MouseEvent.BUTTON3:
+								frame.dispose();
+								tray.remove(ticon);
+								try {
+									if(cs!=null)
+										cs.close();
+									if(ss!=null)
+										ss.close();
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								break;
 						}
 					}
 				};
@@ -142,31 +152,31 @@ public class Server {
 				tray.add(ticon);
 			}
 			System.out.println("Done gui");
-		} catch (AWTException e1) {
+		} catch (AWTException | IOException e1) {
 			e1.printStackTrace();
 		}
 	}
-	public static void sendData(String data){
+	public  void sendData(String data){
 		output.println(data);
 		if(output.checkError())
 			disconnected();
 		else
 			updateState("Sent Successfully");
 	}
-	public static void updateState(String msg){
+	public void updateState(String msg){
 		label.setText(msg);
 		frame.repaint();
 	}
-	public static void disconnected(){
+	public void disconnected(){
 		textfeild.setEnabled(false);
 		updateState("Client not Connected..");
 		lookForClient();
 	}
-	public static void lookForClient(){
+	public void lookForClient(){
 		Thread t=new Thread(new WaitForClient());
 		t.start();
 	}
-	public static class WaitForClient implements Runnable{
+	public class WaitForClient implements Runnable{
 		
 		@Override
 		public void run() {
@@ -180,7 +190,7 @@ public class Server {
 				}
 		}
 	}
-	public static void main(String args[]){
+	public void go(){
 		setGui();
 		try{
 			ss=new ServerSocket(23456);
@@ -197,5 +207,9 @@ public class Server {
 			}
 			
 		}
+	}
+	public static void main(String args[]){
+		new Server().go();
+		
 	}
 }
