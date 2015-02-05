@@ -151,7 +151,7 @@ public class Server {
 				final SystemTray tray = SystemTray.getSystemTray();
 				// new ImageIcon("../res/img/icon.png").getImage();
 				final TrayIcon ticon = new TrayIcon(new ImageIcon(
-						"res/img/icon.png").getImage(),
+						this.getClass().getResource("images/icon.png")).getImage(),
 						"Server running at "
 								+ InetAddress.getLocalHost().getHostAddress()
 								+ ":2345");
