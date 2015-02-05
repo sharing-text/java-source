@@ -1,5 +1,8 @@
 package io.github.zkhan93.sharingtext;
 
+import io.github.zkhan93.sharingtext.contants.Constants;
+import io.github.zkhan93.sharingtext.contants.ServerState;
+
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Font;
@@ -29,38 +32,40 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 public class Server {
-	public static BufferedReader br = new BufferedReader(new InputStreamReader(
-			System.in));
+	// public static BufferedReader br = new BufferedReader(new
+	// InputStreamReader(System.in));
 	PrintWriter output;
 	InputStream in;
 	BufferedReader input;
 	JFrame frame;
 	JTextArea textarea;
-	
+
 	JLabel label;
 	ServerSocket ss = null;
 	Socket cs = null;
 	static Thread t, state_monitor;
-	static int CLIENT_STATE = 0;
+	static int CLIENT_STATE = ServerState.STATE_ZERO;
 	int x;
 	int y;
 
 	public void setGui() {
 		try {
-			
+
 			frame = new JFrame();
 			JScrollPane panel = new JScrollPane();
 			frame.setUndecorated(true);
-			frame.getRootPane().setBorder(BorderFactory.createMatteBorder(10, 4, 4, 4, new ImageIcon()));
+			frame.getRootPane().setBorder(
+					BorderFactory.createMatteBorder(10, 4, 4, 4,
+							new ImageIcon()));
 			frame.setResizable(true);
 			textarea = new JTextArea();
-			textarea.setBackground(new Color(77,182,166));
+			textarea.setBackground(Constants.PRIMARY_COLOR);
 			textarea.setForeground(Color.white);
-			textarea.setFont(new Font(Font.SANS_SERIF ,Font.BOLD,12));
+			textarea.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
 			textarea.setCaretColor(Color.WHITE);
 			label = new JLabel();
-			updateState("Client not Connected..");
-			
+			updateState(Constants.CLIENT_NOT_CONNECTED);
+
 			frame.setType(JFrame.Type.UTILITY);
 			// panel.setLayout(new BorderLayout());
 			panel.setColumnHeaderView(label);
@@ -79,17 +84,17 @@ public class Server {
 
 				@Override
 				public void keyPressed(KeyEvent e) {
-					if (e.getKeyCode() == KeyEvent.VK_ENTER ) {
-						if(e.isShiftDown())
-							textarea.append("\n");
-						else if(textarea.isEditable()
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						if (e.isShiftDown())
+							textarea.append(Constants.NEW_LINE);
+						else if (textarea.isEditable()
 								&& textarea.getText().toString().trim()
 										.length() > 0) {
 							sendData(textarea.getText());
-							textarea.setText("");
+							textarea.setText(null);
 							e.consume();
 						}
-						
+
 					}
 
 				}
@@ -139,42 +144,43 @@ public class Server {
 
 				@Override
 				public void mouseDragged(MouseEvent e) {
-					frame.setLocation(e.getXOnScreen() - x, e.getYOnScreen() - y);
+					frame.setLocation(e.getXOnScreen() - x, e.getYOnScreen()
+							- y);
 
 				}
 			});
+
 			frame.setVisible(true);
 
 			// setting tary icon
 			if (SystemTray.isSupported()) {
-				//System.out.println("Supported");
+				// System.out.println("Supported");
 				final SystemTray tray = SystemTray.getSystemTray();
-				// new ImageIcon("../res/img/icon.png").getImage();
-				final TrayIcon ticon = new TrayIcon(new ImageIcon(
-						this.getClass().getResource("images/icon.png")).getImage(),
-						"Server running at "
+				
+				final TrayIcon ticon = new TrayIcon(new ImageIcon(this
+						.getClass().getResource(Constants.ICON_PATH)).getImage(),
+						Constants.POPUP_INFO
 								+ InetAddress.getLocalHost().getHostAddress()
-								+ ":2345");
+								+ Constants.COLON + Constants.PORT);
 				ticon.setImageAutoSize(true);
 				MouseAdapter madapter = new MouseAdapter() {
 					@Override
 					public void mouseClicked(MouseEvent e) {
 						switch (e.getButton()) {
 						case MouseEvent.BUTTON1:
-							if(e.getClickCount()==2){
+							if (e.getClickCount() == 2) {
 								frame.setVisible(!frame.isVisible());
-							}
-							else{
+							} else {
 								frame.toFront();
 								frame.repaint();
 							}
-							
+
 							break;
 						case MouseEvent.BUTTON3:
 							frame.dispose();
 							tray.remove(ticon);
 							try {
-								CLIENT_STATE = 4;
+								CLIENT_STATE = ServerState.STATE_FOUR;
 								if (cs != null)
 									cs.close();
 								if (ss != null)
@@ -194,7 +200,7 @@ public class Server {
 				ticon.addMouseListener(madapter);
 				tray.add(ticon);
 			}
-			//System.out.println("Done gui");
+			// System.out.println("Done gui");
 		} catch (AWTException | IOException e1) {
 			e1.printStackTrace();
 		}
@@ -205,17 +211,17 @@ public class Server {
 		if (output.checkError())
 			disconnected();
 		else
-			updateState("Sent Successfully");
+			updateState(Constants.SENT_TEXT);
 	}
 
 	public void updateState(String msg) {
 		label.setText(msg);
-		frame.repaint();
+		label.repaint();
 	}
 
 	public void disconnected() {
 		textarea.setEditable(false);
-		updateState("Client not Connected..");
+		updateState(Constants.CLIENT_NOT_CONNECTED);
 		lookForClient();
 	}
 
@@ -232,42 +238,42 @@ public class Server {
 	public class stateCheck extends Thread {
 		public void run() {
 			while (!isInterrupted()) {
-				if (CLIENT_STATE == 2 && !t.isAlive()) {
+				if (CLIENT_STATE == ServerState.STATE_TWO && !t.isAlive()) {
 					disconnected();
-					//System.out.println("called disconnected");
+					// System.out.println("called disconnected");
 				}
-				if (CLIENT_STATE == 4)
+				if (CLIENT_STATE == ServerState.STATE_FOUR)
 					break;
 
 			}
-			//System.out.println("monitor thread closed");
+			// System.out.println("monitor thread closed");
 		}
 	}
 
 	public class WaitForClient extends Thread {
 		public void run() {
-			//System.out.println("I am a new client thread");
+			// System.out.println("I am a new client thread");
 			try {
-				CLIENT_STATE = 0;
+				CLIENT_STATE = ServerState.STATE_ZERO;
 				cs = ss.accept();
-				updateState("Enter Text");
+				updateState(Constants.ENTER_TEXT);
 				textarea.setEditable(true);
 				output = new PrintWriter(cs.getOutputStream(), true);
 				in = cs.getInputStream();
 				input = new BufferedReader(new InputStreamReader(in));
-				//System.out.println("initialization completed");
+				// System.out.println("initialization completed");
 				String msg;
-				CLIENT_STATE = 1;
+				CLIENT_STATE = ServerState.STATE_ONE;
 				while ((msg = input.readLine()) != null) {
-					textarea.append(msg + "\n");
-					updateState("Text Received");
-					//System.out.println("got input");
+					textarea.append(msg+Constants.NEW_LINE);
+					updateState(Constants.RECEIVE_TEXT);
+					// System.out.println("got input");
 					textarea.setCaretPosition(textarea.getText().length());
 				}
-				CLIENT_STATE = 2;
-				//System.out.println("client Thread completed");
+				CLIENT_STATE = ServerState.STATE_TWO;
+				// System.out.println("client Thread completed");
 			} catch (Exception e) {
-				//System.out.println("client Thread dead " + e);
+				// System.out.println("client Thread dead " + e);
 
 			}
 		}
@@ -276,7 +282,7 @@ public class Server {
 	public void go() {
 		setGui();
 		try {
-			ss = new ServerSocket(2345);
+			ss = new ServerSocket(Constants.PORT);
 			state_monitor = new stateCheck();
 			state_monitor.start();
 			lookForClient();
