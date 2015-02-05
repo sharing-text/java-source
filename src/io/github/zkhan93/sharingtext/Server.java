@@ -1,6 +1,8 @@
-package nu.info.zeeshan.gtts;
+package io.github.zkhan93.sharingtext;
 
 import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
@@ -34,6 +36,7 @@ public class Server {
 	BufferedReader input;
 	JFrame frame;
 	JTextArea textarea;
+	
 	JLabel label;
 	ServerSocket ss = null;
 	Socket cs = null;
@@ -44,12 +47,17 @@ public class Server {
 
 	public void setGui() {
 		try {
+			
 			frame = new JFrame();
 			JScrollPane panel = new JScrollPane();
 			frame.setUndecorated(true);
 			frame.getRootPane().setBorder(BorderFactory.createMatteBorder(10, 4, 4, 4, new ImageIcon()));
 			frame.setResizable(true);
 			textarea = new JTextArea();
+			textarea.setBackground(new Color(77,182,166));
+			textarea.setForeground(Color.white);
+			textarea.setFont(new Font(Font.SANS_SERIF ,Font.BOLD,12));
+			textarea.setCaretColor(Color.WHITE);
 			label = new JLabel();
 			updateState("Client not Connected..");
 			
@@ -58,7 +66,7 @@ public class Server {
 			panel.setColumnHeaderView(label);
 			panel.setViewportView(textarea);
 			frame.getContentPane().add(panel);
-			frame.setBounds(new Rectangle(150, 150));
+			frame.setBounds(new Rectangle(350, 350));
 			KeyListener klistner = new KeyListener() {
 
 				@Override
@@ -139,11 +147,11 @@ public class Server {
 
 			// setting tary icon
 			if (SystemTray.isSupported()) {
-				System.out.println("Supported");
+				//System.out.println("Supported");
 				final SystemTray tray = SystemTray.getSystemTray();
 				// new ImageIcon("../res/img/icon.png").getImage();
 				final TrayIcon ticon = new TrayIcon(new ImageIcon(
-						"D:/gttserver/icon.png").getImage(),
+						"res/img/icon.png").getImage(),
 						"Server running at "
 								+ InetAddress.getLocalHost().getHostAddress()
 								+ ":2345");
@@ -186,7 +194,7 @@ public class Server {
 				ticon.addMouseListener(madapter);
 				tray.add(ticon);
 			}
-			System.out.println("Done gui");
+			//System.out.println("Done gui");
 		} catch (AWTException | IOException e1) {
 			e1.printStackTrace();
 		}
@@ -226,19 +234,19 @@ public class Server {
 			while (!isInterrupted()) {
 				if (CLIENT_STATE == 2 && !t.isAlive()) {
 					disconnected();
-					System.out.println("called disconnected");
+					//System.out.println("called disconnected");
 				}
 				if (CLIENT_STATE == 4)
 					break;
 
 			}
-			System.out.println("monitor thread closed");
+			//System.out.println("monitor thread closed");
 		}
 	}
 
 	public class WaitForClient extends Thread {
 		public void run() {
-			System.out.println("I am a new client thread");
+			//System.out.println("I am a new client thread");
 			try {
 				CLIENT_STATE = 0;
 				cs = ss.accept();
@@ -247,17 +255,19 @@ public class Server {
 				output = new PrintWriter(cs.getOutputStream(), true);
 				in = cs.getInputStream();
 				input = new BufferedReader(new InputStreamReader(in));
-				System.out.println("initialization completed");
+				//System.out.println("initialization completed");
 				String msg;
 				CLIENT_STATE = 1;
 				while ((msg = input.readLine()) != null) {
 					textarea.append(msg + "\n");
-					System.out.println("got input");
+					updateState("Text Received");
+					//System.out.println("got input");
+					textarea.setCaretPosition(textarea.getText().length());
 				}
 				CLIENT_STATE = 2;
-				System.out.println("client Thread completed");
+				//System.out.println("client Thread completed");
 			} catch (Exception e) {
-				System.out.println("client Thread dead " + e);
+				//System.out.println("client Thread dead " + e);
 
 			}
 		}
@@ -266,7 +276,7 @@ public class Server {
 	public void go() {
 		setGui();
 		try {
-			ss = new ServerSocket(23456);
+			ss = new ServerSocket(2345);
 			state_monitor = new stateCheck();
 			state_monitor.start();
 			lookForClient();
