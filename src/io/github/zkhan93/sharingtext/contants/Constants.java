@@ -4,8 +4,8 @@ import java.awt.Color;
 
 
 public class Constants {
-	public static final int PORT=2345;
-	
+	public static int PORT=2345;
+	public static final String PREF_PORT="pref_port";
 	
 	public static final String CLIENT_NOT_CONNECTED="Client not Connected..";
 	public static final String ENTER_TEXT="Enter Text";
